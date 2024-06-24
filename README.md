@@ -29,3 +29,7 @@ The code is primarily built upon the following libraries: `pytorch`, `numpy`, `p
 1. Go to the `/deep_dreaming_experiments/` directory and explore the jupyter notebooks for the property case studies explored in the main article above (pore volume, $c_p$, and $Q_{CO_2}$ and $S_{CO_2/N_2}$). The studies make use of the pretrained models avaialable in `/train_models/mof_saved_models/`
 2. Some of these studies rely on optimising seed distributions, which are contained in the `/deep_dreaming_experiments/seeds/` directory.
 3. Deep dreaming results are stored in the `/dream_results/` subdirectory for each case study, and are visualised within their respective jupyter notebooks. 
+
+## 3. Construct (decode) MOFs
+1. Go to the `/construct_MOFs/` directory and run the `construct_dreamed_mofs.ipynb` jupyter notebook. 
+2. To construct MOFs, you need the linker SMILES string (or the file path to a pre-generated building block XYZ file), the PORMAKE toplogy string, and the PORMAKE node string.
