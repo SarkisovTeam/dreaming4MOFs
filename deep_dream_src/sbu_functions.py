@@ -1,28 +1,23 @@
-import os, sys
-import pandas as pd
-import selfies as sf
+import os
 import numpy as np
 from rdkit import Chem
-from rdkit.Chem import AllChem
-from typing import Optional, List
-import copy
-import ase.visualize
-try:
-    from ase.utils import natural_cutoffs
-except Exception as e:
-    from ase.neighborlist import natural_cutoffs
-from pathlib import Path
+from typing import Optional
 import pormake as pm 
 import pysmiles as ps
 import networkx as nx
+from sklearn.decomposition import PCA
+from rdkit.Chem import rdMolTransforms
 
-#************************ UTILITY FUNCTIONS **********************************
+
 def get_smiles_for_bb(bb):
     """
     It takes a building block object from PORMAKE and returns a SMILES string
     
-    :param bb: The building block object
-    :return: A string of the SMILES representation of the molecule.
+    Parameters:
+    - bb (Object): The building block object
+    
+    Returns: 
+    - bb_smiles (str): A string of the SMILES representation of the molecule.
     """
     mol = nx.Graph()
     mol.add_edges_from(bb.bonds)
@@ -30,16 +25,23 @@ def get_smiles_for_bb(bb):
     nx.set_node_attributes(mol, dict(enumerate(bb.atoms.get_positions())), 'positions')
     # nx.set_node_attributes(mol, best_node.atoms.get_positions(), 'positions')
     ps.fill_valence(mol, respect_hcount=True, respect_bond_order=False)
-    return ps.write_smiles(mol)
+    bb_smiles = ps.write_smiles(mol)
+    return bb_smiles
 
     
 def write_smiles_as_bb(smiles, path_to_database, bb_name, closeness=0.75):
-    import os
-    import numpy as np
-    from rdkit import Chem
-    from sklearn.decomposition import PCA
-    from rdkit.Chem import rdMolTransforms
+    """
+    Writes the given SMILES string as a building block (BB) in an XYZ file format.
 
+    Parameters:
+    - smiles (str): The SMILES string representing the molecule.
+    - path_to_database (str): The path to the database where the BB will be saved.
+    - bb_name (str): The name of the BB.
+    - closeness (float, optional): The desired bond length of Fr-bonded neighbors. Default is 0.75.
+
+    Returns:
+    - None
+    """
     # Parse the SMILES string to generate a molecule
     mol = Chem.MolFromSmiles(smiles)
 
@@ -131,6 +133,7 @@ def write_smiles_as_bb(smiles, path_to_database, bb_name, closeness=0.75):
                         'T' if bond.GetBondType() == Chem.rdchem.BondType.TRIPLE else \
                         'A' if bond.GetBondType() == Chem.rdchem.BondType.AROMATIC else '?'
             f.write(f"\t{bond.GetBeginAtomIdx()} \t{bond.GetEndAtomIdx()} {bond_type}\n")
+
 
 def construct_mof(
     topology: str,
