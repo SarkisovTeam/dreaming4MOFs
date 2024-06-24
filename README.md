@@ -13,9 +13,9 @@ The scripts are provided as-is, and are not guaranteed to work without the requi
 
 ## 0. Dependencies
 
-An `environment.yml` file is available for setting up a new Python environment. Most of the required dependencies are handled in this file. However, some other packages, such as [group selfies](https://github.com/aspuru-guzik-group/group-selfies.git) and [PORMAKE](https://github.com/Sangwon91/PORMAKE.git) (if using Windows), will need to be installed seperately. 
+An `environment.yml` file is available for setting up a new Python environment. Most of the required dependencies are handled in this file. However, the [group selfies](https://github.com/aspuru-guzik-group/group-selfies.git) library must be installed separately --- v1.0.0 was used to develop the code in this repo. It is also recommended to install [PORMAKE](https://github.com/Sangwon91/PORMAKE.git) using pip or WSL (if using Windows) --- v.0.2.0 was used in the code development, and will be required to generate (decode) MOFs into their corresponding `.cif` files. 
 
-The code is primarily built upon the following libraries: `pytorch`, `numpy`, `pandas`, [selfies](https://github.com/aspuru-guzik-group/selfies.git), [group selfies](https://github.com/aspuru-guzik-group/group-selfies.git), `rdkit`, `scikit-learn`, [PORMAKE](https://github.com/Sangwon91/PORMAKE.git)
+The code is primarily built upon the following libraries: `pytorch`, `numpy`, `pandas`, [selfies](https://github.com/aspuru-guzik-group/selfies.git), [group selfies](https://github.com/aspuru-guzik-group/group-selfies.git), `rdkit`, `scikit-learn`, `ase`, [PORMAKE](https://github.com/Sangwon91/PORMAKE.git)
 
 ## 1. Training deep dreaming models
 
@@ -26,6 +26,6 @@ The code is primarily built upon the following libraries: `pytorch`, `numpy`, `p
 
 ## 2. Deep dreaming experiments
 
-1. Go to the `/deep_dreaming_experiments/` directory and explore the jupyter notebooks for the property case studies explored in the main article above (pore volume, $c_p$, and $Q_{CO_2}$ and $S_{CO_2/N_2}$).
+1. Go to the `/deep_dreaming_experiments/` directory and explore the jupyter notebooks for the property case studies explored in the main article above (pore volume, $c_p$, and $Q_{CO_2}$ and $S_{CO_2/N_2}$). The studies make use of the pretrained models avaialable in `/train_models/mof_saved_models/`
 2. Some of these studies rely on optimising seed distributions, which are contained in the `/deep_dreaming_experiments/seeds/` directory.
 3. Deep dreaming results are stored in the `/dream_results/` subdirectory for each case study, and are visualised within their respective jupyter notebooks. 
