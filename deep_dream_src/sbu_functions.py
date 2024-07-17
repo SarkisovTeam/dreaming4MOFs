@@ -7,6 +7,25 @@ import pysmiles as ps
 import networkx as nx
 from sklearn.decomposition import PCA
 from rdkit.Chem import rdMolTransforms
+from rdkit.Chem import AllChem
+import uuid
+
+def generate_truncated_uuids(n, length=8):
+    """
+    Generate a list of truncated UUIDs to uniquely identify generated linkers.
+
+    Parameters:
+    - n (int): The number of UUIDs to generate.
+    - length (int): The length of the truncated UUIDs. Default is 8.
+
+    Returns:
+    - list: A list of truncated UUIDs.
+    """
+    ids = []
+    for _ in range(n):
+        unique_id = str(uuid.uuid4()).replace('-', '')[:length]
+        ids.append(unique_id)
+    return ids
 
 
 def get_smiles_for_bb(bb):
@@ -49,7 +68,7 @@ def write_smiles_as_bb(smiles, path_to_database, bb_name, closeness=0.75):
     mol = Chem.AddHs(mol)
 
     # Generate 3D coordinates
-    Chem.AllChem.EmbedMolecule(mol)
+    AllChem.EmbedMolecule(mol)
 
     # Identify the rings in the molecule
     ssr = Chem.GetSymmSSSR(mol)
@@ -151,7 +170,7 @@ def construct_mof(
     - topology (str): pormake topology code.
     - node (str): pormake node code.
     - edge_smi (Optional[str]): The SMILES string representation of the edge. Default is None.
-    - edge_smi_name (Optional[str]): The name of MOF linker, used to override the name of the canonical SMILES string in the name of the cif file. Default is None.
+    - edge_smi_name (Optional[str]): The name of MOF linker, used to name the bb XYZ file. Default is None.
     - path_to_edge_xyz (Optional[str]): The file path to the edge XYZ file. Default is None.
     - save_mof_to_dir (str): The directory to save the MOF. Default is None.
     - cif_file_name (str): The name of the CIF file. Default is 'MOF.cif'.
