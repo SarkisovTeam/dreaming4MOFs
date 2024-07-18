@@ -72,7 +72,6 @@ dependencies:
       - cycler==0.12.1
       - fonttools==4.53.0
       - global-chem==1.9.4
-      - group-selfies==1.0.0
       - joblib==1.4.2
       - kiwisolver==1.4.5
       - matplotlib==3.6.2
