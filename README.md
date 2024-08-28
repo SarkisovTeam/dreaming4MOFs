@@ -54,6 +54,6 @@ The code is primarily built upon the following libraries: `pytorch`, `numpy`, `p
 2. Some of these studies rely on optimising seed distributions, which are contained in the `/deep_dreaming_experiments/seeds/` directory.
 3. Deep dreaming results are stored in the `/dream_results/` subdirectory for each case study, and are visualised within their respective jupyter notebooks. 
 
-## 3. Construct (decode) MOFs
+## 3. Construct MOFs
 1. Go to the `/construct_MOFs/` directory and run the `construct_dreamed_mofs.ipynb` jupyter notebook. 
 2. To construct MOFs, you need the linker SMILES string (or the file path to a pre-generated building block XYZ file), the PORMAKE topology string, and the PORMAKE node string.
