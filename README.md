@@ -58,13 +58,13 @@ The code is primarily built upon the following libraries: `pytorch`, `numpy`, `p
 1. Go to the `/construct_MOFs/` directory and run the `construct_dreamed_mofs.ipynb` jupyter notebook. 
 2. To construct MOFs, you need the linker SMILES string (or the file path to a pre-generated building block XYZ file), the PORMAKE topology string, and the PORMAKE node string.
 
-# 4. Property determination
+## 4. Property determination
 After constructing MOFs, we utilised some open-source softwares to determine their properties (both for training and dreaming).
 
 1. For structural properties we used [Zeo++v.0.3](https://zeoplusplus.org/) with a probe radius of 1.86 Å and high accuracy settings. 
 2. The heat capacity is calculated using the machine learning model of Moosavi et al. [1] The coding implementation can be found on their [github repo.](https://github.com/SeyedMohamadMoosavi/tools-cp-porousmat)
 3. For heats of $CO_2$ adsorption and $CO_2$ / $N_2$ Henry's selectivity (i.e., $Q_{CO_2}$ - $S_{CO_2/N_2}$), we use the [RASPA2](https://github.com/iRASPA/RASPA2) simulation package (as implemented in [mofdscribe](https://github.com/kjappelbaum/mofdscribe) package [2], v0.0.9.dev0). 
 
-# Citations
+## Citations
 [1] Moosavi, S.M., Novotny, B.Á., Ongari, D. et al. A data-science approach to predict the heat capacity of nanoporous materials. Nat. Mater. 21, 1419–1425 (2022).
 [2] Jablonka, Kevin Maik, Andrew S. Rosen, Aditi S. Krishnapriyan, and Berend Smit. An ecosystem for digital reticular chemistry. ACS Cent. Sci. 563-581 (2023).
