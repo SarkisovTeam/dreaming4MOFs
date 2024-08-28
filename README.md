@@ -65,6 +65,8 @@ After constructing MOFs, we utilised some open-source softwares to determine the
 2. The heat capacity is calculated using the machine learning model of Moosavi et al. [1] The coding implementation can be found on their [github repo.](https://github.com/SeyedMohamadMoosavi/tools-cp-porousmat)
 3. For heats of $CO_2$ adsorption and $CO_2$ / $N_2$ Henry's selectivity (i.e., $Q_{CO_2}$ - $S_{CO_2/N_2}$), we use the [RASPA2](https://github.com/iRASPA/RASPA2) simulation package (as implemented in [mofdscribe](https://github.com/kjappelbaum/mofdscribe) package [2], v0.0.9.dev0). 
 
+Additional details on these properties can be found in the methods section [here](https://chemrxiv.org/engage/chemrxiv/article-details/6628ea2721291e5d1d93a83e).
+
 ## Citations
 [1] Moosavi, S.M., Novotny, B.Á., Ongari, D. et al. A data-science approach to predict the heat capacity of nanoporous materials. Nat. Mater. 21, 1419–1425 (2022).
 
