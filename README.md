@@ -31,7 +31,7 @@ The package has been tested on Windows 10 (64-bit, v.22H2).
 
 ## Dependencies
 
-An `environment.yml` file is available for setting up a new Python environment. Most of the required dependencies are handled in this file, and can be executed using the following command:
+An `environment.yml` file is available for setting up a new Python environment. Most of the required dependencies are handled in this file, and can be executed using the following command (which should only take a few minutes):
 
 ```
 conda env create -f environment.yml
