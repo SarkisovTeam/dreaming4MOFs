@@ -28,7 +28,7 @@ def SA_score_penalty(perturbed_structure, penalty_scaler=0.1):
     """
     Calculates the SA score penalty for a perturbed structure.
 
-    Parameters:
+    Args:
     - perturbed_structure (str): The perturbed structure in SMILES format.
     - penalty_scaler (float): A scaling factor for the penalty score (default: 0.1).
 
@@ -43,7 +43,7 @@ def connection_penalty(perturbed_structure, penalty_per_connection=0.1):
     """
     Calculates the penalty for the number of connections in a perturbed structure.
 
-    Parameters:
+    Args:
     - perturbed_structure: The perturbed structure for which the connection penalty is calculated.
     - penalty_per_connection: The penalty value assigned per connection.
 
@@ -71,7 +71,7 @@ def connection_point_graph_distance(smiles, connection='Fr'):
     """
     Calculates the normalized distance between two placeholder atoms in a molecule.
 
-    Parameters:
+    Args:
         smiles (str): The SMILES representation of the molecule.
         connection (str, optional): The symbol of the placeholder atom. Defaults to 'Fr'.
 
@@ -98,7 +98,7 @@ def connection_point_atomic_distance(smiles, connection='Fr', visualise=False):
     """
     Calculates the normalized distance and the actual distance between two placeholder atoms in a molecule.
 
-    Parameters:
+    Args:
     - smiles (str): The SMILES representation of the molecule.
     - connection (str): The atomic symbol of the placeholder atom. Default is 'Fr'.
     - visualise (bool): Whether to visualize the molecule using ASE. Default is False.
@@ -148,7 +148,7 @@ def sc_score_penalty(perturbed_structure, model):
     """
     Calculates the SC score penalty for a perturbed structure based on a given model.
 
-    Parameters:
+    Args:
     - perturbed_structure (str): The perturbed structure to calculate the score penalty for.
     - model: The model used to calculate the score.
 
@@ -549,6 +549,16 @@ def run_dream_exp(
 
 
 def predict_kpi(predictor, seed_mof_string: str, tokenized_info: dict):
+    """
+    Predicts the key performance indicators (KPIs) using the given predictor model.
+    Args:
+        predictor (torch.nn.Module): The predictor model used for KPI prediction.
+        seed_mof_string (str): The seed MOF string for prediction.
+        tokenized_info (dict): A dictionary containing tokenization information.
+    Returns:
+        tuple: A tuple containing the predicted targets, attention weights 1, and attention weights 2.
+    """
+
     # model settings
     predictor.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
