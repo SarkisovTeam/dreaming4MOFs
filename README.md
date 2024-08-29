@@ -59,11 +59,11 @@ The code is primarily built upon the following libraries: `pytorch`, `numpy`, `p
 2. To construct MOFs, you need the linker SMILES string (or the file path to a pre-generated building block XYZ file), the PORMAKE topology string, and the PORMAKE node string.
 
 ## 4. Property determination
-After constructing MOFs, we utilised some open-source softwares to determine their properties (both for training and dreaming).
+After constructing MOFs in step 3 above, we can utilise some open-source softwares to determine their properties (both for training and dreaming).
 
 1. For structural properties we used [Zeo++v.0.3](https://zeoplusplus.org/) with a probe radius of 1.86 Å and high accuracy settings. 
 2. The heat capacity is calculated using the machine learning model of Moosavi et al. [1] The coding implementation can be found on their [github repo.](https://github.com/SeyedMohamadMoosavi/tools-cp-porousmat)
-3. For heats of $CO_2$ adsorption and $CO_2$ / $N_2$ Henry's selectivity (i.e., $Q_{CO_2}$ - $S_{CO_2/N_2}$), we use the [RASPA2](https://github.com/iRASPA/RASPA2) simulation package (as implemented in [mofdscribe](https://github.com/kjappelbaum/mofdscribe) package [2], v0.0.9.dev0). 
+3. For heats of $CO_2$ adsorption and $CO_2$ / $N_2$ Henry's selectivity (i.e., $Q_{CO_2}$ - $S_{CO_2/N_2}$), we use the [RASPA2](https://github.com/iRASPA/RASPA2) simulation package (as implemented in the [mofdscribe](https://github.com/kjappelbaum/mofdscribe) package [2] [`v0.0.9.dev0`]). 
 
 Additional details on these properties can be found in the methods section [here](https://chemrxiv.org/engage/chemrxiv/article-details/6628ea2721291e5d1d93a83e).
 
