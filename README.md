@@ -1,7 +1,7 @@
 # dreaming4MOFs
 
 <p align="center">
-  <img src="./figures/dreaming.PNG" style="width: 50%;" />
+  <img src="./figures/dreaming.PNG" style="width: 25%;" />
 </p>
 
 This repo is intended as a documentation of the simulation experiments conducted in the main article of: [Design of metal-organic frameworks using deep dreaming approaches](https://chemrxiv.org/engage/chemrxiv/article-details/6628ea2721291e5d1d93a83e). 
