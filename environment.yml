@@ -82,6 +82,7 @@ dependencies:
       - pillow==10.3.0
       - pyparsing==3.1.2
       - pysmiles==1.1.2
+      - pormake==0.2.2
       - python-dateutil==2.9.0.post0
       - pytz==2024.1
       - rdkit==2022.9.4
