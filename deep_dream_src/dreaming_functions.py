@@ -303,10 +303,7 @@ def sc_score_penalty(perturbed_structure, model):
 #                         mol = Chem.MolFromSmiles(valid_opt_pathway[-1]['dreamed_smiles'])
 #                         cleaned_selfies = group_grammar.full_encoder(mol)
 #                         tokens = sf.split_selfies(cleaned_selfies)
-#                         ###################################################################################################
-#                         ## TODO: here, using group_grammar to encode mol object leads to new tokens outside of training set.
-#                         ##       Need to see if i can restrict the tokens used for encoding.
-#                         ###################################################################################################
+
 #                         # if cleaned selfies representation contains tokens outside of training set, then use the unclean selfies instead
 #                         if check_token_overlap(tokens, alphabet):
 #                             intialise_selfies = cleaned_selfies
@@ -411,9 +408,12 @@ def dream(
         # calculate penalty on nonlinker molecules
         mol, perturbed_structure = onehot_group_selfies_to_smiles(onehot_input, alphabet, max_len_selfie, group_grammar, symbol_to_idx['[nop]'])
         perturbed_group_selfies, _ = onehot_to_selfies(onehot_input, alphabet, max_len_selfie, symbol_to_idx['[nop]'])
+
+        # We can add or takeaway penalties as needed
         penalty = connection_penalty(perturbed_structure, penalty_per_connection=dream_settings['penalty_per_connection'])
         sc_penalty = sc_score_penalty(perturbed_structure, scscorer)
         
+        # Get the predicted targets from the predictor model for first epoch 
         if epoch == 0:
             predictor_input = prepare_dreaming_edge([perturbed_group_selfies],tokenized_info,noise_level=None)
             predicted_targets = predictor(predictor_input, embedding_input).detach().numpy()[0]
@@ -424,7 +424,7 @@ def dream(
 
         # add penalty to loss
         loss = criterion(dreaming_outputs, target_values)
-        total_loss = loss + penalty
+        total_loss = loss + penalty # + sc_penalty
         total_loss.backward()
         optimizer.step()
         
@@ -432,16 +432,18 @@ def dream(
         continuous_targets.append(outputs)
         losses.append(total_loss.item())
         
+        # Check if new epoch results in a transmutation
         if perturbed_structure not in [s['dreamed_smiles'] for s in transmutation_pathway]:
             predictor_input = prepare_dreaming_edge([perturbed_group_selfies],tokenized_info,noise_level=None)
             predicted_targets = predictor(predictor_input, embedding_input).detach().numpy()[0]
             transmutation_pathway.append({'dreamed_targets': outputs,'predictor_targets':  predicted_targets,'dreamed_smiles': perturbed_structure,'dreamed_selfies': perturbed_group_selfies, 'dreamed_mof_string': perturbed_group_selfies+'[.]'+seed_node_and_topo, 'epoch': epoch})
             composition = get_molecule_composition(perturbed_structure)
 
+            # Check if there are two connection points (represented by Francium atoms)
             if 'Fr' in composition and composition['Fr'] == 2:
                 # if first_kpi>valid_opt_pathway[-1]['dreamed_target']:
 
-                # Assume opt_flags and predicted_targets are lists of the same length
+                # Assume opt_flags and predicted_targets are lists of the same length, track transmutations that are valid and in the correct direction
                 valid = True
                 for idx, (flag, predicted_target) in enumerate(zip(opt_flags, predicted_targets)):
                     # print(flag, predicted_target,valid_opt_pathway[-1]['predictor_targets'], valid_opt_pathway[-1]['predictor_targets'][idx])
@@ -454,6 +456,7 @@ def dream(
                             valid = False
                             break
                 if valid:
+                    # Make sure connection points are appropriately spaced (i.e., >= 0.6 in normalised graph distances)
                     if connection_point_graph_distance(perturbed_structure) >= 0.6:
                         # ************************** SC PENALTY CONSTRAINT ************************
                         if sc_penalty <= 400:
@@ -480,10 +483,7 @@ def dream(
                         mol = Chem.MolFromSmiles(valid_opt_pathway[-1]['dreamed_smiles'])
                         cleaned_selfies = group_grammar.full_encoder(mol)
                         tokens = sf.split_selfies(cleaned_selfies)
-                        ###################################################################################################
-                        ## TODO: here, using group_grammar to encode mol object leads to new tokens outside of training set.
-                        ##       Need to see if i can restrict the tokens used for encoding.
-                        ###################################################################################################
+
                         # if cleaned selfies representation contains tokens outside of training set, then use the unclean selfies instead
                         if check_token_overlap(tokens, alphabet):
                             intialise_selfies = cleaned_selfies
