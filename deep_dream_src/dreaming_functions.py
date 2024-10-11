@@ -359,7 +359,7 @@ def dream(
     model.eval() 
     predictor.eval()
     criterion = nn.MSELoss()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu")
 
     # tokenized info
     alphabet = tokenized_info['alphabet']
