@@ -23,7 +23,7 @@ The scripts are provided as-is, and are not guaranteed to work without the requi
 
 To train the machine learning model, we used a single NVIDIA v100 SXM2 16GB GPU (Volta architecture – hardware v7.0, compute architecture `sm_70`). Model training took approximately 2 hours on average. However, there is opportunity to speed up this process using sequence masking, as we only utilised batch sizes of 1 to deal with variable length sequences while training the model. 
 
-To perform deep dreaming experiments, a standard computer / laptop with sufficient RAM to support the in-memory operations is all that is required. For example, to run the jupyter notebooks contained in `/deep_dreaming_experiments/`, a laptop with 32 GB of RAM, 14 CPU cores, and a 12th Gen Intel(R) Core(TM) i7-12700H 2.30 GHz processor was used. A single deep dreaming experiment (optimising the linker representation over 5,000 epochs) using this hardware setup takes approximately 2 minutes to complete.
+To perform deep dreaming experiments, a standard computer / laptop with sufficient RAM to support the in-memory operations is all that is required. For example, to run the jupyter notebooks contained in `/deep_dreaming_experiments/`, a laptop with 32 GB of RAM, 14 CPU cores, and a 12th Gen Intel(R) Core(TM) i7-12700H 2.30 GHz processor was used. A single deep dreaming experiment (optimising the linker representation over 5,000 epochs) using this hardware setup takes approximately 2 minutes to complete. Dreaming experiments were only conducted on hardware with these specifications, and so we recommend performing dreaming experiments using CPU rather than GPU. 
 
 ### Software Requirements
 
