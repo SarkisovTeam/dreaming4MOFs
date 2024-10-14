@@ -561,7 +561,7 @@ def predict_kpi(predictor, seed_mof_string: str, tokenized_info: dict):
 
     # model settings
     predictor.eval()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu")
 
     # tokenized info
     alphabet = tokenized_info['alphabet']
