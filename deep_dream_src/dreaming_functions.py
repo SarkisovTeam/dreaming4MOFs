@@ -380,6 +380,7 @@ def dream(
     lr = dream_settings['lr']
     target_tolerance = dream_settings['target_tolerance']
     noise_level = dream_settings['noise_level']
+    constrain_sc = dream_settings.get('constrain_sc',False)
 
     # tracking variables
     best_loss = float('inf')
@@ -424,7 +425,10 @@ def dream(
 
         # add penalty to loss
         loss = criterion(dreaming_outputs, target_values)
-        total_loss = loss + penalty # + sc_penalty
+        if constrain_sc:
+            total_loss = loss + sc_penalty
+        else:
+            total_loss = loss + penalty 
         total_loss.backward()
         optimizer.step()
         
@@ -459,9 +463,13 @@ def dream(
                     # Make sure connection points are appropriately spaced (i.e., >= 0.6 in normalised graph distances)
                     if connection_point_graph_distance(perturbed_structure) >= 0.6:
                         # ************************** SC PENALTY CONSTRAINT ************************
-                        if sc_penalty <= 400:
+                        if constrain_sc:
+                            if sc_penalty <= 400:
+                                valid_opt_pathway.append({'dreamed_targets': outputs,'predictor_targets':  predicted_targets, 'dreamed_smiles': perturbed_structure,'dreamed_selfies': perturbed_group_selfies, 'dreamed_mof_string': perturbed_group_selfies+'[.]'+seed_node_and_topo, 'epoch': epoch})
+                                print(f'opt flag: {flag}, all targets: {valid_opt_pathway[-1]["predictor_targets"]}, valid linker, valid distance point')
+                        else:
                             valid_opt_pathway.append({'dreamed_targets': outputs,'predictor_targets':  predicted_targets, 'dreamed_smiles': perturbed_structure,'dreamed_selfies': perturbed_group_selfies, 'dreamed_mof_string': perturbed_group_selfies+'[.]'+seed_node_and_topo, 'epoch': epoch})
-                            print(f'opt flag: {flag}, all targets: {valid_opt_pathway[-1]["predictor_targets"]}, valid linker, valid distance point')
+                            print(f'opt flag: {flag}, all targets: {valid_opt_pathway[-1]["predictor_targets"]}, valid linker, valid distance point')                    
                     else:
                         print(f'opt flag: {flag}, all targets: {valid_opt_pathway[-1]["predictor_targets"]}, valid linker, invalid distance point')
         # terminate dreaming logic
@@ -553,7 +561,7 @@ def predict_kpi(predictor, seed_mof_string: str, tokenized_info: dict):
     Predicts the key performance indicators (KPIs) using the given predictor model.
     Args:
         predictor (torch.nn.Module): The predictor model used for KPI prediction.
-        seed_mof_string (str): The seed MOF string for prediction.
+        seed_mof_string (str): The seed MOF strinvg for prediction.
         tokenized_info (dict): A dictionary containing tokenization information.
     Returns:
         tuple: A tuple containing the predicted targets, attention weights 1, and attention weights 2.
