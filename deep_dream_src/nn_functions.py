@@ -239,7 +239,8 @@ def prepare_hybrid_dataset(df,
                            train=True,
                            scale_targets=True,
                            scaler=None,
-                           noise_level: float=None):
+                           noise_level: float=None,
+                           seed: int=None):
     """
     Prepares a hybrid dataset for training or testing a model.
 
@@ -255,6 +256,7 @@ def prepare_hybrid_dataset(df,
         scale_targets (bool, optional): Whether to scale the target variable. Defaults to True.
         scaler (object, optional): The scaler object for scaling the target variable. Defaults to None.
         noise_level (float, optional): The level of noise to add to the input. Defaults to None.
+        seed (int, optional): Random noise seed (for reproducbility)
     Returns:
         torch.utils.data.DataLoader: The DataLoader object containing the prepared dataset.
         object: The scaler object used for scaling the target variable.
@@ -269,7 +271,7 @@ def prepare_hybrid_dataset(df,
     padded_onehot_encoding = [one_hot_encode(padded_tokens, len(tokenized_info['alphabet'])) for padded_tokens in padded_tokenized_encoding]
     # padded_onehot_encoding = [one_hot_encode(df['tokenized_edge_selfies'].iloc[i], len(tokenized_info['alphabet'])) for i in range(len(df['tokenized_edge_selfies']))]
     if noise_level is not None:
-        onehot_input = add_onehot_noise(padded_onehot_encoding, noise_level)
+        onehot_input = add_onehot_noise(padded_onehot_encoding, noise_level, seed=seed)
     else:
         onehot_input = torch.tensor(np.stack(padded_onehot_encoding),dtype=torch.float32)
 
@@ -311,7 +313,8 @@ def prepare_hybrid_dataset(df,
 def prepare_dreaming_mof(mof_strings: list,
                            tokenized_info: dict,
                            pad_node = True,
-                           noise_level: float = None):
+                           noise_level: float = None,
+                           seed: int=None):
     """
     Prepares the input mof string for the dreaming process.
 
@@ -320,7 +323,7 @@ def prepare_dreaming_mof(mof_strings: list,
         tokenized_info (dict): Information about the tokenization process.
         pad_node (bool, optional): Whether to pad the node_plus_topo sequences. Defaults to True.
         noise_level (float, optional): The level of noise to add to the input. Defaults to None.
-
+        seed (int, optional): Random noise seed (for reproducibility)
     Returns:
         tuple: A tuple containing the one-hot encoded input and the tokenized input.
     """
@@ -348,11 +351,11 @@ def prepare_dreaming_mof(mof_strings: list,
         for selfie in tokenized_selfies]
     padded_onehot_encoding = [one_hot_encode(padded_tokens, len(tokenized_info['alphabet'])) for padded_tokens in padded_tokenized_encoding]
     if noise_level is not None:
-        onehot_input = add_onehot_noise(padded_onehot_encoding, noise_level)
+        onehot_input = add_onehot_noise(padded_onehot_encoding, noise_level, seed=seed)
     else:
         onehot_input = torch.tensor(np.stack(padded_onehot_encoding),dtype=torch.float32)
 
-    print(onehot_input.shape)
+    # print(onehot_input.shape)
     if pad_node:
         embedding_encoding = [pad_tokenized_sequence(
             node_plus_topo,
@@ -369,7 +372,8 @@ def prepare_dreaming_mof(mof_strings: list,
 
 def prepare_dreaming_edge(selfies: list,
                            tokenized_info: dict,
-                           noise_level: float = None):
+                           noise_level: float = None,
+                           seed: int=None):
     """
     Prepares the input edge string for the dreaming process.
 
@@ -377,7 +381,7 @@ def prepare_dreaming_edge(selfies: list,
         selfies (list): A list of edge strings.
         tokenized_info (dict): Information about the tokenization process.
         noise_level (float, optional): The level of noise to add to the input. Defaults to None.
-
+        seed (int, optional): Random noise seed (for reprodcibility)
     Returns:
         tuple: A tuple containing the one-hot encoded input and the tokenized input.
     """
@@ -397,7 +401,7 @@ def prepare_dreaming_edge(selfies: list,
         for selfie in tokenized_selfies]
     padded_onehot_encoding = [one_hot_encode(padded_tokens, len(tokenized_info['alphabet'])) for padded_tokens in padded_tokenized_encoding]
     if noise_level is not None:
-        onehot_input = add_onehot_noise(padded_onehot_encoding, noise_level)
+        onehot_input = add_onehot_noise(padded_onehot_encoding, noise_level, seed=seed)
     else:
         onehot_input = torch.tensor(np.stack(padded_onehot_encoding),dtype=torch.float32)
         

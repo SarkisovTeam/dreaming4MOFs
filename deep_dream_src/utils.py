@@ -2,7 +2,7 @@ import os, sys
 import pandas as pd
 import selfies as sf
 import numpy as np
-from rdkit import Chem
+from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem
 from rdkit.Chem.Fingerprints import FingerprintMols
 from rdkit.SimDivFilters.rdSimDivPickers import MaxMinPicker
@@ -68,6 +68,37 @@ def tanimoto_similarity(fp1, fp2):
     return DataStructs.FingerprintSimilarity(fp1, fp2)
 
 
+
+def compute_fingerprints(smiles_list, radius=2, nBits=1024):
+    """
+    Compute Morgan fingerprints for a list of SMILES strings.
+    """
+    fingerprints = []
+    for smi in smiles_list:
+        mol = Chem.MolFromSmiles(smi)
+        if mol is not None:
+            fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius, nBits)
+            fingerprints.append(fp)
+    return fingerprints
+
+    
+def snn_metric(generated_smiles, reference_smiles, return_similarities=False):
+    """
+    Compute the Similarity to Nearest Neighbor (SNN) metric.
+    """
+    generated_fps = compute_fingerprints(generated_smiles)
+    reference_fps = compute_fingerprints(reference_smiles)
+
+    max_similarities = []
+    for g_fp in generated_fps:
+        max_similarity = max(tanimoto_similarity(g_fp, r_fp) for r_fp in reference_fps)
+        max_similarities.append(max_similarity)
+
+    if return_similarities:
+        return np.mean(max_similarities), max_similarities
+    else:
+        return np.mean(max_similarities)
+
 def category_to_vec(cat_var: list):
     ''''
     Take a list of categorical variables and create a dictionary
@@ -76,56 +107,49 @@ def category_to_vec(cat_var: list):
     unique_entries.sort()
     return {cat: i for i, cat in enumerate(unique_entries)}
 
-
-# def add_onehot_noise(X, noise_type='uniform', k=0.1, lam=1, mean=0, std=0.1, seed=42, min_clip=-0.95, max_clip=0.95):
+# def add_onehot_noise(x: list, k: float):
 #     """
-#     Adds noise to the zero elements in each one-hot encoded vector in X.
+#     Adds one-hot noise to a one-hot encoded tensor.
+
+#     Args:
+#         x (list): The input list of tensors.
+#         k (float): The settings for the one-hot noise.
+
+#     Returns:
+#         torch.Tensor: The tensor with one-hot noise added.
 #     """
-#     np.random.seed(seed)
+#     input_tensor = torch.stack(x, dim=0)
+#     noise = torch.rand(input_tensor.shape) * k
+#     mask = (input_tensor == 0)
+#     noisy_tensor = input_tensor + noise * mask
+#     normalized_tensor = noisy_tensor / torch.sum(noisy_tensor, dim=2, keepdim=True)
 
-#     if len(X.shape) == 1:  # Check if features are 1D
-#         X_reshaped = X.reshape(-1, 1)
-#         is_1d = True
-#     else:
-#         X_reshaped = X
-#         is_1d = False
+#     return normalized_tensor
 
-#     if noise_type == 'uniform':
-#         noise = np.random.uniform(0, k, X_reshaped.shape)
-#     elif noise_type == 'exponential':
-#         noise = expon.rvs(scale=1/lam, size=X_reshaped.shape)
-#     elif noise_type == 'normal':
-#         noise = np.random.normal(mean, std, X_reshaped.shape)
-#     elif noise_type == 'truncated_normal':
-#         a, b = (min_clip - mean) / std, (max_clip - mean) / std
-#         noise = truncnorm.rvs(a, b, loc=mean, scale=std, size=X_reshaped.shape)
-
-#     noise = np.clip(noise, min_clip, max_clip)
-#     noisy_X = X_reshaped + noise * (X_reshaped == 0)
-
-#     if is_1d:
-#         noisy_X = noisy_X.flatten()
-#         # Normalize for 1D case
-#         noisy_X /= np.sum(noisy_X)
-#     else:
-#         # Normalize for 2D case along the last axis (features)
-#         noisy_X /= np.sum(noisy_X, axis=-1, keepdims=True)
-
-#     return noisy_X
-
-def add_onehot_noise(x: list, k: float):
+def add_onehot_noise(x: list, k: float, seed: int = None):
     """
     Adds one-hot noise to a one-hot encoded tensor.
 
     Args:
         x (list): The input list of tensors.
         k (float): The settings for the one-hot noise.
+        seed (int): Random noise seed (for reproducbility)
 
     Returns:
         torch.Tensor: The tensor with one-hot noise added.
     """
+    gen = None
+    if seed is not None:
+        gen = torch.Generator()
+        gen.manual_seed(seed)
+
     input_tensor = torch.stack(x, dim=0)
-    noise = torch.rand(input_tensor.shape) * k
+    # Pass the local generator to torch.rand if provided
+    if gen is not None:
+        noise = torch.rand(input_tensor.shape, generator=gen) * k
+    else:
+        noise = torch.rand(input_tensor.shape) * k
+
     mask = (input_tensor == 0)
     noisy_tensor = input_tensor + noise * mask
     normalized_tensor = noisy_tensor / torch.sum(noisy_tensor, dim=2, keepdim=True)
@@ -159,18 +183,6 @@ def canonicalize_selfies(selfies):
     smiles = sf.decoder(selfies)
     return Chem.MolToSmiles(Chem.MolFromSmiles(smiles))
 
-
-def compute_fingerprints(smiles_list, radius=2, nBits=1024):
-    """
-    Compute Morgan fingerprints for a list of SMILES strings.
-    """
-    fingerprints = []
-    for smi in smiles_list:
-        mol = Chem.MolFromSmiles(smi)
-        if mol is not None:
-            fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius, nBits)
-            fingerprints.append(fp)
-    return fingerprints
 
 def calculate_diversity(smiles_list ,n_samples, seed=42):
     picker = MaxMinPicker()

@@ -18,7 +18,10 @@ from ase.visualize import view
 from kpi_small_mols import SAscore_from_smiles
 from typing import List
 from scscorer import SCScorer
-
+import warnings
+from sklearn.exceptions import InconsistentVersionWarning
+import pickle
+from nn_functions import MolecularLSTMModel
 
 def check_token_overlap(tokens, alphabet):
     return all(token in alphabet for token in tokens)
@@ -39,64 +42,61 @@ def SA_score_penalty(perturbed_structure, penalty_scaler=0.1):
     return sascorer.calculateScore(mol) * penalty_scaler
 
 
-def connection_penalty(perturbed_structure, penalty_per_connection=0.1):
+def connection_penalty(onehot_input, Fr_token_index, max_len_selfie, alpha=0.1):
     """
-    Calculates the penalty for the number of connections in a perturbed structure.
+    Calculates the connection penalty for a given one-hot encoded input.
+
+    This function computes a penalty based on the probability mass of a specific token (Fr_token_index) 
+    within a one-hot encoded input sequence. The penalty is calculated using a quadratic function 
+    centered around a target value of 2, scaled by a factor alpha.
 
     Args:
-    - perturbed_structure: The perturbed structure for which the connection penalty is calculated.
-    - penalty_per_connection: The penalty value assigned per connection.
+        onehot_input (torch.Tensor): A one-hot encoded input array of shape (1, max_len_selfie, vocab_size).
+        Fr_token_index (int): The index of the token for which the probability mass is calculated.
+        max_len_selfie (int): The maximum length of the input sequence.
+        alpha (float, optional): A scaling factor for the penalty. Default is 0.1.
 
     Returns:
-    - The connection penalty for the perturbed structure.
-
-    The function extracts the number of Francium atoms (pseudoatoms for connection points) in the molecule
-    and applies a penalty based on the difference between the count and the expected value of 2. If the count
-    is exactly 2, the penalty is 0.0.
+        float: The calculated connection penalty.
     """
-    # Extract the number of Francium atoms (pseudoatoms for connection points) in the molecule
-    composition = get_molecule_composition(perturbed_structure)
-    try:
-        Fr_count = composition['Fr']
-    except: 
-        Fr_count = 0
-    # Apply a heavy penalty if the count is not 2
-    if Fr_count != 2:
-        return penalty_per_connection * abs(Fr_count - 2) 
-    else:
-        return 0.0
+    Fr_probability_mass = np.sum([onehot_input[0][i][Fr_token_index].item() for i in range(max_len_selfie)])
+    return alpha * (Fr_probability_mass - 2)**2
     
 
 def connection_point_graph_distance(smiles, connection='Fr'):
     """
-    Calculates the normalized distance between two placeholder atoms in a molecule.
+    Calculates the normalised distance between two placeholder atoms in a molecule.
 
     Args:
         smiles (str): The SMILES representation of the molecule.
         connection (str, optional): The symbol of the placeholder atom. Defaults to 'Fr'.
 
     Returns:
-        float: The normalized distance between the two placeholder atoms.
+        float: The normalised distance between the two placeholder atoms.
     """
     # Find indices of the placeholder atoms
     mol = Chem.MolFromSmiles(smiles)
     placeholder_indices = [atom.GetIdx() for atom in mol.GetAtoms() if atom.GetSymbol() == connection] 
 
-    # Calculate the shortest path between the two placeholder atoms
-    shortest_path_length = len(Chem.rdmolops.GetShortestPath(mol, placeholder_indices[0], placeholder_indices[1])) - 1
+    if len(placeholder_indices) == 2:
 
-    # Calculate the maximum path length within the molecule (diameter of the graph)
-    all_pairs = Chem.rdmolops.GetDistanceMatrix(mol)
-    max_path_length = int(all_pairs.max())
+        # Calculate the shortest path between the two placeholder atoms
+        shortest_path_length = len(Chem.rdmolops.GetShortestPath(mol, placeholder_indices[0], placeholder_indices[1])) - 1
 
-    # Normalize the shortest path length by the maximum path length
-    normalized_distance = shortest_path_length / max_path_length
-    return normalized_distance
+        # Calculate the maximum path length within the molecule (diameter of the graph)
+        all_pairs = Chem.rdmolops.GetDistanceMatrix(mol)
+        max_path_length = int(all_pairs.max())
+
+        # Normalize the shortest path length by the maximum path length
+        normalized_distance = shortest_path_length / max_path_length
+        return normalized_distance
+    else:
+        return None
 
 
 def connection_point_atomic_distance(smiles, connection='Fr', visualise=False):
     """
-    Calculates the normalized distance and the actual distance between two placeholder atoms in a molecule.
+    Calculates the normalised distance and the actual distance between two placeholder atoms in a molecule.
 
     Args:
     - smiles (str): The SMILES representation of the molecule.
@@ -336,6 +336,7 @@ def dream(
         tokenized_info: dict, 
         group_grammar,
         dream_settings: dict,
+        seed: int=None,
         ):
     """
     Generates new MOFs using a dreaming model.
@@ -348,7 +349,7 @@ def dream(
         tokenized_info (dict): Tokenized information used for preparing the input.
         group_grammar: The group grammar used for encoding and decoding the MOF structures.
         dream_settings (dict): Settings for the dreaming process.
-
+        seed (int, optional): Random noise seed (for reproducbility)
     Returns:
         pd.DataFrame: DataFrame containing the valid linker optimization pathway.
         pd.DataFrame: DataFrame containing the molecule transmutation pathway.
@@ -369,7 +370,7 @@ def dream(
     # prepare input
     num_targets = len(target_values)
     target_values = torch.tensor(target_values,dtype=torch.float32)
-    onehot_input, embedding_input = prepare_dreaming_mof([seed_mof_string],tokenized_info,pad_node=False,noise_level=dream_settings['noise_level'])
+    onehot_input, embedding_input = prepare_dreaming_mof([seed_mof_string],tokenized_info,pad_node=False,noise_level=dream_settings['noise_level'], seed=seed)
     onehot_input, embedding_input, target_values = onehot_input.to(device), embedding_input.to(device), target_values.to(device)
     _, seed_smiles = onehot_group_selfies_to_smiles(onehot_input, alphabet, max_len_selfie, group_grammar, symbol_to_idx['[nop]'])
     seed_node_and_topo = seed_mof_string.split('[.]')[1]
@@ -398,6 +399,7 @@ def dream(
 
     # Training Loop
     early_stop = False
+    onehot_inputs = [onehot_input]
     for epoch in range(num_epochs):
 
         # backpropogation
@@ -411,12 +413,13 @@ def dream(
         perturbed_group_selfies, _ = onehot_to_selfies(onehot_input, alphabet, max_len_selfie, symbol_to_idx['[nop]'])
 
         # We can add or takeaway penalties as needed
-        penalty = connection_penalty(perturbed_structure, penalty_per_connection=dream_settings['penalty_per_connection'])
+        # penalty = connection_penalty(perturbed_structure, penalty_per_connection=dream_settings['penalty_per_connection'])
+        penalty = connection_penalty(onehot_input, symbol_to_idx['[FrH0]'], max_len_selfie)
         sc_penalty = sc_score_penalty(perturbed_structure, scscorer)
         
         # Get the predicted targets from the predictor model for first epoch 
         if epoch == 0:
-            predictor_input = prepare_dreaming_edge([perturbed_group_selfies],tokenized_info,noise_level=None)
+            predictor_input = prepare_dreaming_edge([perturbed_group_selfies],tokenized_info,noise_level=None, seed=seed)
             predicted_targets = predictor(predictor_input, embedding_input).detach().numpy()[0]
             valid_opt_pathway.append({'dreamed_targets': outputs,'predictor_targets':  predicted_targets, 'dreamed_smiles': seed_smiles,'dreamed_selfies': perturbed_group_selfies, 'dreamed_mof_string': perturbed_group_selfies+'[.]'+seed_node_and_topo, 'epoch': epoch})
             transmutation_pathway.append({'dreamed_targets': outputs, 'predictor_targets':  predicted_targets,'dreamed_smiles': seed_smiles,'dreamed_selfies': perturbed_group_selfies, 'dreamed_mof_string': perturbed_group_selfies+'[.]'+seed_node_and_topo, 'epoch': epoch})
@@ -425,20 +428,21 @@ def dream(
 
         # add penalty to loss
         loss = criterion(dreaming_outputs, target_values)
+
         if constrain_sc:
             total_loss = loss + sc_penalty
         else:
             total_loss = loss + penalty 
         total_loss.backward()
         optimizer.step()
-        
+
         # track variables
         continuous_targets.append(outputs)
         losses.append(total_loss.item())
         
         # Check if new epoch results in a transmutation
         if perturbed_structure not in [s['dreamed_smiles'] for s in transmutation_pathway]:
-            predictor_input = prepare_dreaming_edge([perturbed_group_selfies],tokenized_info,noise_level=None)
+            predictor_input = prepare_dreaming_edge([perturbed_group_selfies],tokenized_info,noise_level=None,seed=seed)
             predicted_targets = predictor(predictor_input, embedding_input).detach().numpy()[0]
             transmutation_pathway.append({'dreamed_targets': outputs,'predictor_targets':  predicted_targets,'dreamed_smiles': perturbed_structure,'dreamed_selfies': perturbed_group_selfies, 'dreamed_mof_string': perturbed_group_selfies+'[.]'+seed_node_and_topo, 'epoch': epoch})
             composition = get_molecule_composition(perturbed_structure)
@@ -502,7 +506,8 @@ def dream(
                         onehot_input = prepare_dreaming_edge(
                             [intialise_selfies],
                             tokenized_info,
-                            noise_level=noise_level
+                            noise_level=noise_level,
+                            seed=seed
                             )
                         no_improvement_counter = 0
                         patience = 100
@@ -512,6 +517,9 @@ def dream(
                     early_stop = True
                     print(f"Early stopping triggered. No improvement in MSE loss for {patience} epochs.")
                     break
+
+        # ##################################################################            
+        onehot_inputs.append(onehot_input)
     print('Finished Training')
     dreaming_losses = {'targets': continuous_targets, 'losses': losses, 'epochs': epoch, 'early_stop': early_stop}
     return pd.DataFrame(valid_opt_pathway), pd.DataFrame(transmutation_pathway), dreaming_losses
@@ -581,3 +589,38 @@ def predict_kpi(predictor, seed_mof_string: str, tokenized_info: dict):
     onehot_input, embedding_input = onehot_input.to(device), embedding_input.to(device)
     predicted_targets, attn_weights1, attn_weights2 = predictor(onehot_input, embedding_input, return_attention_weights=True)
     return predicted_targets, attn_weights1, attn_weights2
+
+
+
+def prediction_with_uncertainty(dir_models: str, seed_mof_string: str, tokenized_info: dict):
+    """
+    Predicts the key performance indicators (KPIs) using the given predictor model.
+    Args:
+        dir_models (str): string to directory containing the ensemble of predictor models.
+        seed_mof_string (str): The seed MOF strinvg for prediction.
+        tokenized_info (dict): A dictionary containing tokenization information.
+    Returns:
+        tuple: A tuple containing the mean predicted targets, and the variance in the predictions
+    """
+    # Filter out InconsistentVersionWarning
+    warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+    predictors = os.listdir(dir_models)
+    targets = []
+    for predictor_name in predictors:
+        with open(os.path.join(dir_models,predictor_name), 'rb') as f:
+            predictor_train_info = pickle.load(f)
+        predictor_train_info['hyperparams']['num_layers'] = 1     
+        predictor_hyperparams = predictor_train_info['hyperparams']
+        predictor_scaler = predictor_train_info['scaler']
+        predictor = MolecularLSTMModel(**predictor_hyperparams)
+        predictor.load_state_dict(predictor_train_info['model_state_dict'])
+        # model settings
+        predictor.eval()
+        device = torch.device("cpu")
+
+        # prepare input 
+        onehot_input, embedding_input = prepare_dreaming_mof([seed_mof_string], tokenized_info, pad_node=False, noise_level=None)
+        onehot_input, embedding_input = onehot_input.to(device), embedding_input.to(device)
+        predicted_targets, _, _ = predictor(onehot_input, embedding_input, return_attention_weights=True)
+        targets.append(predictor_scaler.inverse_transform(np.array(predicted_targets.detach()).reshape(1, -1)).item())
+    return np.mean(targets), np.var(targets)  
