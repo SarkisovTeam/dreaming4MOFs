@@ -4,6 +4,9 @@
   <img src="./figures/dreaming.PNG" style="width: 25%;" />
 </p>
 
+[![DOI](https://zenodo.org/badge/818152690.svg)](https://doi.org/10.5281/zenodo.15089008)
+
+
 This repo is intended as a documentation of the simulation experiments conducted in the main article of: [Design of metal-organic frameworks using deep dreaming approaches](https://chemrxiv.org/engage/chemrxiv/article-details/6628ea2721291e5d1d93a83e). 
 
 
