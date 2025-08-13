@@ -7,7 +7,7 @@
 [![DOI](https://zenodo.org/badge/818152690.svg)](https://doi.org/10.5281/zenodo.15089008)
 
 
-This repo is intended as a documentation of the simulation experiments conducted in the main article of: [Design of metal-organic frameworks using deep dreaming approaches](https://chemrxiv.org/engage/chemrxiv/article-details/6628ea2721291e5d1d93a83e). 
+This repo is intended as a documentation of the simulation experiments conducted in the main article of: [Inverse design of metal-organic frameworks using deep dreaming approaches](https://doi.org/10.1038/s41467-025-59952-3). 
 
 
 Note:
